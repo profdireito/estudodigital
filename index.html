@@ -247,13 +247,9 @@ function entrarMural(){
     
     const t = turmasPublicas.find(x => x.id === tid);
     const a = t.alunos.find(x => x.id === aid);
-    
     const pinReal = a.pin || '1234';
     
-    if(pinDigitado !== pinReal) {
-        alert('PIN incorreto. Tente novamente ou peça ao professor a sua senha de acesso.');
-        return;
-    }
+    if(pinDigitado !== pinReal) { alert('PIN incorreto. Tente novamente ou peça ao professor a sua senha de acesso.'); return; }
     
     ALUNO = { id: a.id, nome: a.nome, turmaId: t.id, turmaNome: t.nome, disciplina: t.disc || 'Geral' };
     localStorage.setItem('aluno_lms_sessao', JSON.stringify(ALUNO));
@@ -263,6 +259,9 @@ function entrarMural(){
 function sair(){
     localStorage.removeItem('aluno_lms_sessao');
     ALUNO = { id: null, nome: '', turmaId: '', turmaNome: '', disciplina: '' };
+    document.getElementById('sel-aluno').value = '';
+    document.getElementById('aluno-pin').value = '';
+    document.getElementById('box-pin').style.display = 'none';
     mostrarTela('tela-login');
 }
 
@@ -349,9 +348,7 @@ function iniciarProva(id){
     mostrarTela('tela-prova'); window.scrollTo(0,0);
 }
 
-function voltarMural(){
-    if(confirm('Tem certeza? Suas respostas não salvas serão perdidas.')){ abrirMural(); }
-}
+function voltarMural(){ if(confirm('Tem certeza? Suas respostas não salvas serão perdidas.')){ abrirMural(); } }
 
 function comprimirImagem(input, qIdx) {
     const file = input.files[0];
@@ -367,7 +364,6 @@ function comprimirImagem(input, qIdx) {
             const canvas = document.createElement('canvas');
             const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
             let width = img.width; let height = img.height;
-
             if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
             else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
 
@@ -404,12 +400,7 @@ async function enviarProva(){
             const txtArea = document.getElementById(`resp_${i}`);
             const val = txtArea.value.trim();
             if(!val && !anexosProva[i]) todasRespondidas = false;
-            
-            dissertativas.push({ 
-                enunciado: q.enunciado, 
-                respostaAluno: val || '',
-                anexo: anexosProva[i] || null
-            });
+            dissertativas.push({ enunciado: q.enunciado, respostaAluno: val || '', anexo: anexosProva[i] || null });
         }
     });
 
@@ -437,7 +428,6 @@ async function enviarProva(){
 
 function mostrarTela(id){ document.querySelectorAll('.container').forEach(c => c.classList.remove('act')); document.getElementById(id).classList.add('act'); }
 
-// EXPOR AS FUNÇÕES PARA O HTML PODER LER
 window.carregarAlunos = carregarAlunos;
 window.mostrarPin = mostrarPin;
 window.entrarMural = entrarMural;
