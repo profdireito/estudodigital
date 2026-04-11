@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Portal do Aluno - Estudo Digital</title>
-<link href="[https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap)" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root{
   --verde:#1A4A2E; 
@@ -86,12 +86,12 @@ textarea{min-height:120px;resize:vertical}
 
     <div id="login-form" style="display:none">
       <label>1. QUAL É A SUA TURMA?</label>
-      <select id="sel-turma" onchange="carregarAlunos()"><option value="">Aguarde...</option></select>
+      <select id="sel-turma" onchange="window.carregarAlunos()"><option value="">Aguarde...</option></select>
 
       <label>2. QUAL É O SEU NOME?</label>
       <select id="sel-aluno" disabled><option value="">Selecione a turma primeiro...</option></select>
 
-      <button class="btn bp" style="margin-top:10px" onclick="entrarMural()">Acessar Painel →</button>
+      <button class="btn bp" style="margin-top:10px" onclick="window.entrarMural()">Acessar Painel →</button>
     </div>
   </div>
 </main>
@@ -102,7 +102,7 @@ textarea{min-height:120px;resize:vertical}
         <h2 class="syne" style="font-size:22px;color:var(--verde)">Olá, <span id="mural-nome">Aluno</span>!</h2>
         <p style="color:var(--muted);font-size:14px" id="mural-turma">Turma</p>
     </div>
-    <button class="btn bs" style="width:auto;padding:8px 12px;font-size:11px" onclick="sair()">Sair da Conta</button>
+    <button class="btn bs" style="width:auto;padding:8px 12px;font-size:11px" onclick="window.sair()">Sair da Conta</button>
   </div>
   
   <div id="mural-loading" class="loader"><div class="spinner"></div><br>Carregando seu ambiente de estudo...</div>
@@ -126,7 +126,7 @@ textarea{min-height:120px;resize:vertical}
 </main>
 
 <main class="container" id="tela-prova">
-  <button class="btn bs" style="margin-bottom:20px;width:auto;align-self:flex-start;padding:10px 15px;font-size:12px" onclick="voltarMural()">← Voltar ao Início</button>
+  <button class="btn bs" style="margin-bottom:20px;width:auto;align-self:flex-start;padding:10px 15px;font-size:12px" onclick="window.voltarMural()">← Voltar ao Início</button>
   
   <div style="margin-bottom:25px">
     <h2 class="syne" id="prova-titulo" style="font-size:24px;color:var(--verde);margin-bottom:5px;line-height:1.2">Título da Prova</h2>
@@ -135,7 +135,7 @@ textarea{min-height:120px;resize:vertical}
 
   <div id="prova-questoes"></div>
   
-  <button class="btn bp" style="margin-top:10px;margin-bottom:30px" onclick="enviarProva()" id="btn-enviar">Entregar Avaliação ✅</button>
+  <button class="btn bp" style="margin-top:10px;margin-bottom:30px" onclick="window.enviarProva()" id="btn-enviar">Entregar Avaliação ✅</button>
 </main>
 
 <main class="container" id="tela-sucesso">
@@ -143,12 +143,14 @@ textarea{min-height:120px;resize:vertical}
     <div style="font-size:60px;margin-bottom:20px">🎉</div>
     <h2 class="syne" style="color:var(--verde);font-size:24px;margin-bottom:10px">Avaliação Entregue!</h2>
     <p style="color:var(--muted);font-size:15px;margin-bottom:30px;line-height:1.5">Suas respostas (e fotos) foram enviadas com sucesso para a correção do professor.</p>
-    <button class="btn bp" onclick="voltarMural()">Voltar ao Ambiente de Estudo</button>
+    <button class="btn bp" onclick="window.voltarMural()">Voltar ao Ambiente de Estudo</button>
   </div>
 </main>
 
-<script>
-// --- CONFIGURAÇÃO FIREBASE ---
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, collection, getDocs, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
 const FB_CONFIG = {
   apiKey:"AIzaSyB2Y6Uggohrp8hMPIa3GyPqgqyOygRA0SU",
   authDomain:"professor-digital-8f792.firebaseapp.com",
@@ -162,26 +164,19 @@ let _db = null;
 let turmasPublicas = [];
 let provasPublicadas = [];
 let provaAtual = null;
-let anexosProva = {}; // Guarda as fotos comprimidas tiradas pelo aluno
-
+let anexosProva = {}; 
 let ALUNO = { id: null, nome: '', turmaId: '', turmaNome: '', disciplina: '' };
 
-window.onload = async () => {
-    try {
-        const {initializeApp}=await import('[https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js](https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js)');
-        const {getFirestore}=await import('[https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js)');
-        _db = getFirestore(initializeApp(FB_CONFIG));
-        carregarConfiguracoesIniciais();
-    } catch(e) {
-        document.getElementById('login-loading').innerHTML = '<span style="color:red">Erro de conexão com o servidor do professor. Atualize a página.</span>';
-    }
-};
+try {
+    const app = initializeApp(FB_CONFIG);
+    _db = getFirestore(app);
+    carregarConfiguracoesIniciais();
+} catch(e) {
+    document.getElementById('login-loading').innerHTML = '<span style="color:red">Erro de conexão com o servidor do professor. Atualize a página.</span>';
+}
 
 async function carregarConfiguracoesIniciais(){
     try {
-        const {doc, getDoc} = await import('[https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js)');
-        
-        // 1. Personalização do Professor
         const snapCfg = await getDoc(doc(_db, 'publico', 'config'));
         if(snapCfg.exists() && snapCfg.data().config){
             const cfg = JSON.parse(snapCfg.data().config);
@@ -192,7 +187,6 @@ async function carregarConfiguracoesIniciais(){
             document.title = 'Portal - ' + (cfg.profNome || 'Estudo');
         }
         
-        // 2. Carregar Turmas
         const snap = await getDoc(doc(_db, 'publico', 'turmas'));
         if(snap.exists() && snap.data().turmas){
             turmasPublicas = JSON.parse(snap.data().turmas);
@@ -245,7 +239,6 @@ function sair(){
     mostrarTela('tela-login');
 }
 
-// --- FLUXO 2: MURAL DE CONTEÚDOS ---
 async function abrirMural(){
     document.getElementById('mural-nome').textContent = ALUNO.nome.split(' ')[0];
     document.getElementById('mural-turma').textContent = ALUNO.turmaNome;
@@ -261,7 +254,7 @@ async function abrirMural(){
         const progresso = JSON.parse(localStorage.getItem('aluno_checks_' + ALUNO.id) || '{}');
         document.getElementById('lista-checklists').innerHTML = turmaDB.checklists.map(c => {
             const isFeito = !!progresso[c.id];
-            return `<div class="chk-item ${isFeito ? 'feito' : ''}" onclick="toggleChecklist('${c.id}', this)"><div class="chk-box">${isFeito ? '✓' : ''}</div><span style="font-size:14px;font-weight:600">${c.texto}</span></div>`;
+            return `<div class="chk-item ${isFeito ? 'feito' : ''}" onclick="window.toggleChecklist('${c.id}', this)"><div class="chk-box">${isFeito ? '✓' : ''}</div><span style="font-size:14px;font-weight:600">${c.texto}</span></div>`;
         }).join('');
     } else document.getElementById('sec-checklist').style.display = 'none';
 
@@ -271,7 +264,6 @@ async function abrirMural(){
     } else document.getElementById('sec-materiais').style.display = 'none';
 
     try {
-        const {doc, getDoc} = await import('[https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js)');
         const snapProvas = await getDoc(doc(_db, 'publico', 'provas'));
         provasPublicadas = [];
         if(snapProvas.exists() && snapProvas.data().provas) provasPublicadas = JSON.parse(snapProvas.data().provas);
@@ -286,7 +278,7 @@ async function abrirMural(){
         }
         
         provasPublicadas.sort((a,b)=>b.criadoEm.localeCompare(a.criadoEm));
-        listaProvas.innerHTML = provasPublicadas.map(p => `<div class="prova-card" onclick="iniciarProva('${p.id}')"><div style="display:flex;align-items:center;flex:1"><div class="prova-icon">📝</div><div><strong style="font-size:15px;color:var(--verde);display:block;margin-bottom:2px">${p.titulo}</strong><span style="font-size:12px;color:var(--muted)">${p.perguntas.length} Questões</span></div></div><div style="font-weight:800;color:var(--verde2);font-size:16px">→</div></div>`).join('');
+        listaProvas.innerHTML = provasPublicadas.map(p => `<div class="prova-card" onclick="window.iniciarProva('${p.id}')"><div style="display:flex;align-items:center;flex:1"><div class="prova-icon">📝</div><div><strong style="font-size:15px;color:var(--verde);display:block;margin-bottom:2px">${p.titulo}</strong><span style="font-size:12px;color:var(--muted)">${p.perguntas.length} Questões</span></div></div><div style="font-weight:800;color:var(--verde2);font-size:16px">→</div></div>`).join('');
     } catch(e) { document.getElementById('mural-loading').innerHTML = '<span style="color:red">Erro ao carregar as provas.</span>'; }
 }
 
@@ -298,12 +290,11 @@ function toggleChecklist(idCheck, elemento){
     localStorage.setItem(key, JSON.stringify(progresso));
 }
 
-// --- FLUXO 3: RESPONDER A PROVA ---
 function iniciarProva(id){
     provaAtual = provasPublicadas.find(x => x.id === id);
     if(!provaAtual) return;
     
-    anexosProva = {}; // Limpa fotos anteriores
+    anexosProva = {}; 
     document.getElementById('prova-titulo').textContent = provaAtual.titulo;
     const container = document.getElementById('prova-questoes');
     
@@ -315,11 +306,10 @@ function iniciarProva(id){
             html += `</div>`;
         } else {
             html += `<textarea id="resp_${i}" placeholder="Escreva a sua resposta de forma clara e/ou anexe uma foto abaixo..."></textarea>`;
-            // BOTÃO DE FOTO ADICIONADO AQUI
             html += `<div style="margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap">
                         <label style="background:var(--light); border:1px solid var(--border); padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; color:var(--text); font-size:12px; display:flex; align-items:center; gap:5px; margin:0;">
                             📷 Anexar Foto da Câmera (Opcional)
-                            <input type="file" accept="image/*" capture="environment" style="display:none" onchange="comprimirImagem(this, ${i})">
+                            <input type="file" accept="image/*" capture="environment" style="display:none" onchange="window.comprimirImagem(this, ${i})">
                         </label>
                         <span id="feedback_foto_${i}" style="font-size:12px; font-weight:bold;"></span>
                      </div>`;
@@ -332,9 +322,10 @@ function iniciarProva(id){
     mostrarTela('tela-prova'); window.scrollTo(0,0);
 }
 
-function voltarMural(){ if(confirm('Tem certeza? Suas respostas não salvas serão perdidas.')){ abrirMural(); } }
+function voltarMural(){
+    if(confirm('Tem certeza? Suas respostas não salvas serão perdidas.')){ abrirMural(); }
+}
 
-// FUNÇÃO MÁGICA: Comprime a foto no navegador antes de enviar
 function comprimirImagem(input, qIdx) {
     const file = input.files[0];
     if(!file) return;
@@ -357,7 +348,6 @@ function comprimirImagem(input, qIdx) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
             
-            // Comprime para 60% de qualidade (gera uma string base64 leve)
             const dataUrl = canvas.toDataURL('image/jpeg', 0.6); 
             anexosProva[qIdx] = dataUrl;
             feedback.innerHTML = '<span style="color:var(--verde)">✅ Foto anexada com sucesso!</span>';
@@ -386,13 +376,12 @@ async function enviarProva(){
         } else {
             const txtArea = document.getElementById(`resp_${i}`);
             const val = txtArea.value.trim();
-            // A dissertativa está respondida se tiver texto OU tiver foto anexada
             if(!val && !anexosProva[i]) todasRespondidas = false;
             
             dissertativas.push({ 
                 enunciado: q.enunciado, 
                 respostaAluno: val || '',
-                anexo: anexosProva[i] || null // Envia a foto comprimida para o banco
+                anexo: anexosProva[i] || null
             });
         }
     });
@@ -411,7 +400,6 @@ async function enviarProva(){
     document.getElementById('btn-enviar').innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0;border-width:2px"></div> Enviando a sua prova...';
 
     try {
-        const {collection, addDoc} = await import('[https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js)');
         await addDoc(collection(_db, 'quiz_resultados'), payload);
         mostrarTela('tela-sucesso'); window.scrollTo(0,0);
     } catch(e) {
@@ -421,6 +409,16 @@ async function enviarProva(){
 }
 
 function mostrarTela(id){ document.querySelectorAll('.container').forEach(c => c.classList.remove('act')); document.getElementById(id).classList.add('act'); }
+
+// EXPOR AS FUNÇÕES PARA O HTML PODER LER
+window.carregarAlunos = carregarAlunos;
+window.entrarMural = entrarMural;
+window.sair = sair;
+window.voltarMural = voltarMural;
+window.enviarProva = enviarProva;
+window.comprimirImagem = comprimirImagem;
+window.iniciarProva = iniciarProva;
+window.toggleChecklist = toggleChecklist;
 </script>
 </body>
 </html>
