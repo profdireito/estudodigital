@@ -80,7 +80,7 @@ textarea{min-height:120px;resize:vertical}
   <div class="card" style="margin-top:20px">
     <div style="text-align:center;margin-bottom:25px">
       <h2 class="syne" style="color:var(--verde);font-size:24px;margin-bottom:5px">Identificação</h2>
-      <p style="color:var(--muted);font-size:13px">Selecione a sua turma, o seu nome e digite a sua senha (PIN) para acessar.</p>
+      <p style="color:var(--muted);font-size:13px">Selecione a sua turma, o seu nome e digite a sua senha secreta (PIN) para acessar.</p>
     </div>
     
     <div id="login-loading" class="loader"><div class="spinner"></div><br>Sincronizando com o servidor do professor...</div>
@@ -93,7 +93,7 @@ textarea{min-height:120px;resize:vertical}
       <select id="sel-aluno" onchange="window.mostrarPin()" disabled><option value="">Selecione a turma primeiro...</option></select>
 
       <div id="box-pin" style="display:none; animation:fadeIn 0.3s ease;">
-          <label>3. DIGITE O SEU PIN (SENHA)</label>
+          <label>3. DIGITE O SEU PIN (SENHA DE 4 NÚMEROS)</label>
           <input type="password" id="aluno-pin" placeholder="Ex: 1234" maxlength="4" style="text-align:center;font-size:24px;letter-spacing:10px;font-weight:bold"/>
       </div>
 
@@ -148,7 +148,7 @@ textarea{min-height:120px;resize:vertical}
   <div class="card" style="text-align:center;padding:40px 20px;margin-top:40px">
     <div style="font-size:60px;margin-bottom:20px">🎉</div>
     <h2 class="syne" style="color:var(--verde);font-size:24px;margin-bottom:10px">Avaliação Entregue!</h2>
-    <p style="color:var(--muted);font-size:15px;margin-bottom:30px;line-height:1.5">Suas respostas (e fotos) foram enviadas com sucesso para a correção do professor.</p>
+    <p style="color:var(--muted);font-size:15px;margin-bottom:30px;line-height:1.5">Suas respostas (e fotos, se houver) foram enviadas com sucesso para a correção do professor.</p>
     <button class="btn bp" onclick="window.voltarMural()">Voltar ao Ambiente de Estudo</button>
   </div>
 </main>
@@ -178,7 +178,7 @@ try {
     _db = getFirestore(app);
     carregarConfiguracoesIniciais();
 } catch(e) {
-    document.getElementById('login-loading').innerHTML = '<span style="color:red">Erro de conexão com o servidor do professor. Atualize a página.</span>';
+    document.getElementById('login-loading').innerHTML = '<span style="color:red">Erro de conexão com o servidor. Atualize a página.</span>';
 }
 
 async function carregarConfiguracoesIniciais(){
@@ -243,13 +243,13 @@ function entrarMural(){
     const pinDigitado = document.getElementById('aluno-pin').value.trim();
     
     if(!tid || !aid){ alert('Por favor, selecione a sua turma e o seu nome.'); return; }
-    if(!pinDigitado){ alert('Por favor, digite o seu PIN (Senha) de 4 números.'); return; }
+    if(!pinDigitado){ alert('Por favor, digite o seu PIN (Senha secreta) de 4 números.'); return; }
     
     const t = turmasPublicas.find(x => x.id === tid);
     const a = t.alunos.find(x => x.id === aid);
     const pinReal = a.pin || '1234';
     
-    if(pinDigitado !== pinReal) { alert('PIN incorreto. Tente novamente ou peça ao professor a sua senha de acesso.'); return; }
+    if(pinDigitado !== pinReal) { alert('PIN incorreto. Tente novamente ou peça ao professor a sua senha.'); return; }
     
     ALUNO = { id: a.id, nome: a.nome, turmaId: t.id, turmaNome: t.nome, disciplina: t.disc || 'Geral' };
     localStorage.setItem('aluno_lms_sessao', JSON.stringify(ALUNO));
@@ -348,7 +348,9 @@ function iniciarProva(id){
     mostrarTela('tela-prova'); window.scrollTo(0,0);
 }
 
-function voltarMural(){ if(confirm('Tem certeza? Suas respostas não salvas serão perdidas.')){ abrirMural(); } }
+function voltarMural(){
+    if(confirm('Tem certeza? Suas respostas não salvas serão perdidas.')){ abrirMural(); }
+}
 
 function comprimirImagem(input, qIdx) {
     const file = input.files[0];
@@ -364,6 +366,7 @@ function comprimirImagem(input, qIdx) {
             const canvas = document.createElement('canvas');
             const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
             let width = img.width; let height = img.height;
+
             if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
             else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
 
@@ -400,7 +403,12 @@ async function enviarProva(){
             const txtArea = document.getElementById(`resp_${i}`);
             const val = txtArea.value.trim();
             if(!val && !anexosProva[i]) todasRespondidas = false;
-            dissertativas.push({ enunciado: q.enunciado, respostaAluno: val || '', anexo: anexosProva[i] || null });
+            
+            dissertativas.push({ 
+                enunciado: q.enunciado, 
+                respostaAluno: val || '',
+                anexo: anexosProva[i] || null
+            });
         }
     });
 
@@ -421,13 +429,14 @@ async function enviarProva(){
         await addDoc(collection(_db, 'quiz_resultados'), payload);
         mostrarTela('tela-sucesso'); window.scrollTo(0,0);
     } catch(e) {
-        alert('Erro de conexão ao enviar a prova. Verifique a internet.');
+        alert('Erro de conexão ao enviar a prova. Verifique sua internet.');
         document.getElementById('btn-enviar').disabled = false; document.getElementById('btn-enviar').innerHTML = 'Entregar Avaliação ✅';
     }
 }
 
 function mostrarTela(id){ document.querySelectorAll('.container').forEach(c => c.classList.remove('act')); document.getElementById(id).classList.add('act'); }
 
+// EXPOR AS FUNÇÕES PARA O HTML PODER LER NO SAFARI/IOS
 window.carregarAlunos = carregarAlunos;
 window.mostrarPin = mostrarPin;
 window.entrarMural = entrarMural;
