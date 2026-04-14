@@ -62,7 +62,7 @@ textarea{min-height:120px;resize:vertical}
 .spinner{display:inline-block;width:30px;height:30px;border:3px solid rgba(26,74,46,0.2);border-top-color:var(--verde);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:15px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.boletim-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; font-size:14px; }
+.boletim-row { display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee; font-size:14px; align-items:center;}
 .boletim-row:last-child { border-bottom: none; }
 </style>
 </head>
@@ -80,7 +80,7 @@ textarea{min-height:120px;resize:vertical}
   <div class="card" style="margin-top:20px">
     <div style="text-align:center;margin-bottom:25px">
       <h2 class="syne" style="color:var(--verde);font-size:24px;margin-bottom:5px">Identificação</h2>
-      <p style="color:var(--muted);font-size:13px">Selecione a sua turma, o seu nome e digite a sua senha secreta (PIN) para acessar.</p>
+      <p style="color:var(--muted);font-size:13px">Selecione a sua turma e o seu nome para acessar.</p>
     </div>
     
     <div id="login-loading" class="loader"><div class="spinner"></div><br><span id="msg-erro-conexao">Sincronizando com o servidor do professor...</span></div>
@@ -159,7 +159,7 @@ textarea{min-height:120px;resize:vertical}
       </label>
       <div id="feedback_foto_global" style="font-size:12px; font-weight:bold; text-align:center; margin-top:8px"></div>
   </div>
-  
+
   <button class="btn bp" style="margin-top:10px;margin-bottom:30px" onclick="window.enviarProva()" id="btn-enviar">Entregar Avaliação ✅</button>
 </main>
 
@@ -167,7 +167,7 @@ textarea{min-height:120px;resize:vertical}
   <div class="card" style="text-align:center;padding:40px 20px;margin-top:40px">
     <div style="font-size:60px;margin-bottom:20px">🎉</div>
     <h2 class="syne" style="color:var(--verde);font-size:24px;margin-bottom:10px">Avaliação Entregue!</h2>
-    <p style="color:var(--muted);font-size:15px;margin-bottom:30px;line-height:1.5">Suas respostas (e fotos) foram enviadas com sucesso para a correção do professor.</p>
+    <p style="color:var(--muted);font-size:15px;margin-bottom:30px;line-height:1.5">Suas respostas (e fotos, se enviadas) foram entregues ao professor.</p>
     <button class="btn bp" onclick="window.voltarMural()">Voltar ao Ambiente de Estudo</button>
   </div>
 </main>
@@ -372,7 +372,7 @@ async function abrirMural(){
     } else document.getElementById('sec-materiais').style.display = 'none';
 
     try {
-        // Renderiza Notas e Vistos (do Professor)
+        // BOLETIM / NOTAS E VISTOS PRESENCIAIS
         const snapMeta = await _db.collection('publico').doc('atividades_meta').get();
         let htmlBoletim = '';
         if(snapMeta.exists && snapMeta.data().meta) {
@@ -383,16 +383,16 @@ async function abrirMural(){
                 const reg = ALUNO.atividadesOffline[av.id];
                 if(reg) {
                     let st = av.tipo === 'visto' ? (reg.visto ? '<span style="color:green;font-weight:bold">Visto ✅</span>' : '<span style="color:var(--muted)">Pendente</span>') : (reg.nota != null ? `<span style="color:var(--verde);font-weight:bold">Nota: ${reg.nota}</span>` : '<span style="color:var(--muted)">Aguardando nota</span>');
-                    htmlBoletim += `<div class="boletim-row"><span>${av.nome}</span> <span>${st}</span></div>`;
+                    htmlBoletim += `<div class="boletim-row"><span>📝 ${av.nome}</span> <span>${st}</span></div>`;
                 }
             });
         }
         
-        // Renderiza Resultados de Provas Online Anteriores
+        // RESULTADOS ONLINE
         const snapRes = await _db.collection('quiz_resultados').where('alunoId', '==', ALUNO.id).get();
         snapRes.forEach(doc => {
             const r = doc.data();
-            htmlBoletim += `<div class="boletim-row"><span>${r.tituloProva} (Online)</span> <span><span style="color:${r.placar >= 70 ? 'green' : 'red'};font-weight:bold">${r.placar}%</span></span></div>`;
+            htmlBoletim += `<div class="boletim-row"><span>🚀 ${r.tituloProva}</span> <span><span style="color:${r.placar >= 70 ? 'green' : 'red'};font-weight:bold">${r.placar}%</span></span></div>`;
         });
         
         if(htmlBoletim !== '') {
@@ -402,7 +402,7 @@ async function abrirMural(){
             document.getElementById('sec-notas').style.display = 'none';
         }
 
-        // Renderiza Provas para fazer
+        // PROVAS ABERTAS
         const snapProvas = await _db.collection('publico').doc('provas').get();
         provasPublicadas = [];
         if(snapProvas.exists && snapProvas.data().provas) provasPublicadas = JSON.parse(snapProvas.data().provas);
@@ -436,6 +436,8 @@ window.iniciarProva = function(id){
     
     anexosProva = {}; 
     document.getElementById('prova-titulo').textContent = provaAtual.titulo;
+    document.getElementById('feedback_foto_global').innerHTML = ''; // Limpa as fotos globais
+    
     const container = document.getElementById('prova-questoes');
     
     container.innerHTML = provaAtual.perguntas.map((q, i) => {
@@ -446,7 +448,7 @@ window.iniciarProva = function(id){
             html += `</div>`;
         } else {
             html += `<textarea id="resp_${i}" placeholder="Escreva a sua resposta de forma clara e/ou anexe uma foto abaixo..."></textarea>`;
-            // BOTAO FOTO NA DISSERTATIVA
+            // BOTÃO DE FOTO ESPECÍFICO (Se quiser bater uma foto por pergunta)
             html += `<div style="margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap">
                         <label style="background:var(--light); border:1px solid var(--border); padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; color:var(--text); font-size:12px; display:flex; align-items:center; gap:5px; margin:0;">
                             📷 Anexar Foto (Opcional)
@@ -458,8 +460,6 @@ window.iniciarProva = function(id){
         html += `</div>`; return html;
     }).join('');
     
-    // Limpa feedback global de foto caso o aluno entre e saia
-    document.getElementById('feedback_foto_global').innerHTML = '';
     document.getElementById('btn-enviar').disabled = false;
     document.getElementById('btn-enviar').innerHTML = 'Entregar Avaliação ✅';
     mostrarTela('tela-prova'); window.scrollTo(0,0);
@@ -474,7 +474,7 @@ window.comprimirImagem = function(input, qIdx) {
     if(!file) return;
     
     const feedback = document.getElementById(`feedback_foto_${qIdx}`);
-    feedback.innerHTML = '<span style="color:var(--ouro)">Comprimindo foto... ⏳</span>';
+    feedback.innerHTML = '<span style="color:var(--ouro)">Processando foto... ⏳</span>';
     
     const reader = new FileReader();
     reader.onload = function(event) {
@@ -493,7 +493,7 @@ window.comprimirImagem = function(input, qIdx) {
             
             const dataUrl = canvas.toDataURL('image/jpeg', 0.6); 
             anexosProva[qIdx] = dataUrl;
-            feedback.innerHTML = '<span style="color:var(--verde)">✅ Foto anexada com sucesso!</span>';
+            feedback.innerHTML = '<span style="color:var(--verde)">✅ Foto pronta e anexada!</span>';
         }
         img.src = event.target.result;
     }
@@ -529,12 +529,16 @@ window.enviarProva = async function(){
         }
     });
 
-    // Adiciona o anexo global caso exista
+    // Se o aluno anexou foto no botão GLOBAL do final da tela
     if(anexosProva['global']) {
-        dissertativas.push({ enunciado: "Foto Extra do Caderno/Rascunho", respostaAluno: "Imagem anexada pelo aluno.", anexo: anexosProva['global'] });
+        dissertativas.push({ 
+            enunciado: "📷 Foto Extra (Caderno/Rascunho)", 
+            respostaAluno: "Foto anexada.", 
+            anexo: anexosProva['global'] 
+        });
     }
 
-    if(!todasRespondidas){ alert('Por favor, preencha o texto (ou escolha a opção) em todas as questões antes de entregar.'); return; }
+    if(!todasRespondidas){ alert('Por favor, preencha o texto, selecione uma opção ou anexe uma foto em todas as questões antes de entregar.'); return; }
 
     const placar = totalME > 0 ? Math.round((acertosME / totalME) * 100) : 100;
     const payload = {
@@ -545,7 +549,7 @@ window.enviarProva = async function(){
     };
 
     document.getElementById('btn-enviar').disabled = true;
-    document.getElementById('btn-enviar').innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0;border-width:2px"></div> Enviando a sua prova...';
+    document.getElementById('btn-enviar').innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0;border-width:2px"></div> Enviando...';
 
     try {
         await _db.collection('quiz_resultados').add(payload);
@@ -557,6 +561,18 @@ window.enviarProva = async function(){
 };
 
 function mostrarTela(id){ document.querySelectorAll('.container').forEach(c => c.classList.remove('act')); document.getElementById(id).classList.add('act'); }
+
+// EXPOR AS FUNÇÕES PARA O HTML
+window.carregarAlunos = carregarAlunos;
+window.mostrarPin = mostrarPin;
+window.entrarMural = entrarMural;
+window.sair = sair;
+window.voltarMural = voltarMural;
+window.enviarProva = enviarProva;
+window.comprimirImagem = comprimirImagem;
+window.iniciarProva = iniciarProva;
+window.toggleChecklist = toggleChecklist;
+window.alterarMinhaSenha = alterarMinhaSenha;
 </script>
 </body>
 </html>
