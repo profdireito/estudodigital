@@ -4,12 +4,175 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Portal do Aluno - Estudo Digital</title>
-<link href="[https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap)" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
-<script type="module">
-import { initializeApp } from '[https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js](https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js)';
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs } from '[https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js)';
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
+<style>
+:root{
+  --verde:#1A4A2E; 
+  --verde2:#143d23;
+  --verde3:#5BAD6F;
+  --ouro:#D4AF37;  
+  --bg:#F0F2F5;--card:#fff;--border:#E2E8F0;--text:#1E293B;--muted:#64748B;--light:#F8FAFC;
+  --danger:#EF4444;--radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+h1,h2,h3,.syne{font-family:'Syne',sans-serif}
+
+#hdr{background:var(--verde);color:#fff;padding:15px 20px;display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+.hdr-ico{width:40px;height:40px;background:var(--ouro);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--verde);font-weight:900;margin-right:12px}
+
+.container{width:100%;max-width:600px;margin:0 auto;padding:20px;display:none;flex-direction:column;min-height:calc(100vh - 70px)}
+.container.act{display:flex;animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.04);margin-bottom:15px;border:1px solid var(--border)}
+label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px}
+select, input[type="text"], input[type="password"], textarea{width:100%;padding:14px;border-radius:10px;border:2px solid var(--border);background:var(--light);font-family:inherit;font-size:15px;color:var(--text);margin-bottom:20px;outline:none;transition:0.2s;appearance:none}
+select:focus, input:focus, textarea:focus{border-color:var(--verde3);background:#fff}
+textarea{min-height:120px;resize:vertical}
+
+.btn{width:100%;padding:16px;border-radius:12px;border:none;font-weight:800;font-size:15px;font-family:inherit;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(0.98)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.bp{background:var(--verde);color:#fff;box-shadow:0 4px 15px rgba(26,74,46,0.2)}.bp:hover{filter:brightness(0.9)}
+.bs{background:#e2e8f0;color:#475569}.bs:hover{background:#cbd5e1}
+
+.prova-card{background:#fff;border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:space-between}
+.prova-card:active{transform:scale(0.98);border-color:var(--verde3);background:#f0fdf4}
+.prova-icon{width:45px;height:45px;border-radius:10px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:20px;margin-right:15px;flex-shrink:0}
+
+.mat-card{background:var(--light);border:1px solid var(--border);border-radius:10px;padding:12px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.chk-item{display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:0.2s}
+.chk-item.feito{background:#f0fdf4;border-color:#bbf7d0}
+.chk-item.feito span{text-decoration:line-through;color:var(--muted)}
+.chk-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
+.chk-item.feito .chk-box{background:var(--verde);border-color:var(--verde);color:#fff}
+
+.q-box{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+.q-enum{font-size:16px;font-weight:700;color:var(--text);margin-bottom:15px;line-height:1.5}
+.alt-label{display:flex;align-items:flex-start;gap:12px;padding:14px;border:2px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:0.2s;background:var(--light)}
+.alt-label:has(input:checked){border-color:var(--verde);background:#e6f4ea;color:var(--verde)}
+.alt-label input{margin-top:3px;width:18px;height:18px;accent-color:var(--verde)}
+
+.loader{text-align:center;padding:40px;color:var(--muted);font-weight:600;font-size:16px}
+.spinner{display:inline-block;width:30px;height:30px;border:3px solid rgba(26,74,46,0.2);border-top-color:var(--verde);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:15px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.boletim-row { display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee; font-size:14px; align-items:center;}
+.boletim-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="hdr-ico">⚖</div>
+  <div>
+    <h1 class="syne" id="sys-nome" style="font-size:18px;margin:0;line-height:1.2">Portal de Treinamento</h1>
+    <div style="font-size:11px;opacity:0.8" id="prof-nome">Aguardando sincronização...</div>
+  </div>
+</header>
+
+<main class="container act" id="tela-login">
+  <div class="card" style="margin-top:20px">
+    <div style="text-align:center;margin-bottom:25px">
+      <h2 class="syne" style="color:var(--verde);font-size:24px;margin-bottom:5px">Identificação</h2>
+      <p style="color:var(--muted);font-size:13px">Selecione a sua turma e o seu nome para acessar.</p>
+    </div>
+    
+    <div id="login-loading" class="loader"><div class="spinner"></div><br><span id="msg-erro-conexao">Sincronizando com o servidor do professor...</span></div>
+
+    <div id="login-form" style="display:none">
+      <label>1. QUAL É A SUA TURMA?</label>
+      <select id="sel-turma" onchange="window.carregarAlunos()"><option value="">Aguarde...</option></select>
+
+      <label>2. QUAL É O SEU NOME?</label>
+      <select id="sel-aluno" onchange="window.mostrarPin()" disabled><option value="">Selecione a turma primeiro...</option></select>
+
+      <div id="box-pin" style="display:none; animation:fadeIn 0.3s ease;">
+          <label id="lbl-pin" style="color:var(--ouro)">3. VERIFICANDO SENHA...</label>
+          <input type="password" id="aluno-pin" placeholder="Ex: 1234" maxlength="4" style="text-align:center;font-size:24px;letter-spacing:10px;font-weight:bold"/>
+      </div>
+
+      <button class="btn bp" id="btn-login-aluno" style="margin-top:10px;display:none;" onclick="window.entrarMural()">Acessar Painel →</button>
+    </div>
+  </div>
+</main>
+
+<main class="container" id="tela-mural">
+  <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+        <h2 class="syne" style="font-size:22px;color:var(--verde)">Olá, <span id="mural-nome">Aluno</span>!</h2>
+        <p style="color:var(--muted);font-size:14px" id="mural-turma">Turma</p>
+    </div>
+    <div style="display:flex;gap:5px;flex-direction:column;align-items:flex-end">
+        <button class="btn bs" style="width:auto;padding:8px 12px;font-size:11px" onclick="window.alterarMinhaSenha()">🔑 Alterar Senha</button>
+        <button class="btn bs" style="width:auto;padding:8px 12px;font-size:11px;background:#fef2f2;color:#991b1b" onclick="window.sair()">Sair da Conta</button>
+    </div>
+  </div>
+  
+  <div id="mural-loading" class="loader"><div class="spinner"></div><br>Carregando seu ambiente de estudo...</div>
+  
+  <div id="mural-conteudo" style="display:none">
+      
+      <div id="sec-notas" style="margin-bottom:25px;display:none">
+          <h3 style="font-size:12px;font-weight:800;color:var(--verde2);text-transform:uppercase;margin-bottom:10px">📊 Minhas Notas e Vistos</h3>
+          <div id="lista-notas" class="card" style="padding:10px"></div>
+      </div>
+
+      <div id="sec-checklist" style="margin-bottom:25px;display:none">
+          <h3 style="font-size:12px;font-weight:800;color:var(--ouro);text-transform:uppercase;margin-bottom:10px">🎯 Suas Metas de Revisão</h3>
+          <div id="lista-checklists"></div>
+      </div>
+
+      <div id="sec-materiais" style="margin-bottom:25px;display:none">
+          <h3 style="font-size:12px;font-weight:800;color:var(--verde);text-transform:uppercase;margin-bottom:10px">📚 Materiais de Estudo</h3>
+          <div id="lista-materiais"></div>
+      </div>
+
+      <div id="sec-provas">
+          <h3 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:10px">📝 Avaliações e Treinamentos</h3>
+          <div id="lista-provas"></div>
+      </div>
+  </div>
+</main>
+
+<main class="container" id="tela-prova">
+  <button class="btn bs" style="margin-bottom:20px;width:auto;align-self:flex-start;padding:10px 15px;font-size:12px" onclick="window.voltarMural()">← Voltar ao Início</button>
+  
+  <div style="margin-bottom:25px">
+    <h2 class="syne" id="prova-titulo" style="font-size:24px;color:var(--verde);margin-bottom:5px;line-height:1.2">Título da Prova</h2>
+    <p style="color:var(--muted);font-size:13px">Responda todas as questões abaixo e clique em entregar no final.</p>
+  </div>
+
+  <div id="prova-questoes"></div>
+  
+  <div class="card" style="background:#fffbeb;border-color:#fef08a">
+      <h4 style="font-size:14px;color:#854d0e;margin-bottom:5px">📷 Anexar Foto do Caderno/Rascunho</h4>
+      <p style="font-size:12px;color:#a16207;margin-bottom:10px">Se o professor pediu para fazer um mapa mental ou se você quiser mandar a foto de um rascunho extra, use o botão abaixo.</p>
+      <label style="background:var(--ouro); color:#fff; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; display:flex; align-items:center; justify-content:center; gap:5px; margin:0;">
+          Tirar Foto Extra
+          <input type="file" accept="image/*" capture="environment" style="display:none" onchange="window.comprimirImagem(this, 'global')">
+      </label>
+      <div id="feedback_foto_global" style="font-size:12px; font-weight:bold; text-align:center; margin-top:8px"></div>
+  </div>
+
+  <button class="btn bp" style="margin-top:10px;margin-bottom:30px" onclick="window.enviarProva()" id="btn-enviar">Entregar Avaliação ✅</button>
+</main>
+
+<main class="container" id="tela-sucesso">
+  <div class="card" style="text-align:center;padding:40px 20px;margin-top:40px">
+    <div style="font-size:60px;margin-bottom:20px">🎉</div>
+    <h2 class="syne" style="color:var(--verde);font-size:24px;margin-bottom:10px">Avaliação Entregue!</h2>
+    <p style="color:var(--muted);font-size:15px;margin-bottom:30px;line-height:1.5">Suas respostas (e fotos, se enviadas) foram entregues ao professor.</p>
+    <button class="btn bp" onclick="window.voltarMural()">Voltar ao Ambiente de Estudo</button>
+  </div>
+</main>
+
+<script>
 const FB_CONFIG = {
   apiKey:"AIzaSyB2Y6Uggohrp8hMPIa3GyPqgqyOygRA0SU",
   authDomain:"professor-digital-8f792.firebaseapp.com",
@@ -22,24 +185,25 @@ const FB_CONFIG = {
 let _db = null;
 let turmasPublicas = [];
 let provasPublicadas = [];
-let metadadosAtividades = {};
 let provaAtual = null;
 let anexosProva = {}; 
 let isCadastroPin = false; 
 let ALUNO = { id: null, nome: '', turmaId: '', turmaNome: '', disciplina: '', realPin: '', atividadesOffline: {} };
 
-try {
-    const app = initializeApp(FB_CONFIG);
-    _db = getFirestore(app);
-    carregarConfiguracoesIniciais();
-} catch(e) {
-    document.getElementById('login-loading').innerHTML = '<span style="color:red">Erro de conexão com o servidor. Atualize a página.</span>';
-}
-
-async function carregarConfiguracoesIniciais(){
+window.onload = function() {
     try {
-        const snapCfg = await getDoc(doc(_db, 'publico', 'config'));
-        if(snapCfg.exists() && snapCfg.data().config){
+        firebase.initializeApp(FB_CONFIG);
+        _db = firebase.firestore();
+        window.carregarConfiguracoesIniciais();
+    } catch(e) {
+        document.getElementById('msg-erro-conexao').innerHTML = '<span style="color:red">Erro de conexão com o servidor. Verifique a internet.</span>';
+    }
+};
+
+window.carregarConfiguracoesIniciais = async function() {
+    try {
+        const snapCfg = await _db.collection('publico').doc('config').get();
+        if(snapCfg.exists && snapCfg.data().config){
             const cfg = JSON.parse(snapCfg.data().config);
             document.documentElement.style.setProperty('--verde', cfg.corP || '#1A4A2E');
             document.documentElement.style.setProperty('--ouro', cfg.corS || '#D4AF37');
@@ -48,8 +212,8 @@ async function carregarConfiguracoesIniciais(){
             document.title = 'Portal - ' + (cfg.profNome || 'Estudo');
         }
         
-        const snap = await getDoc(doc(_db, 'publico', 'turmas'));
-        if(snap.exists() && snap.data().turmas){
+        const snap = await _db.collection('publico').doc('turmas').get();
+        if(snap.exists && snap.data().turmas){
             turmasPublicas = JSON.parse(snap.data().turmas);
             const selTurma = document.getElementById('sel-turma');
             turmasPublicas.forEach(t => { selTurma.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
@@ -58,14 +222,14 @@ async function carregarConfiguracoesIniciais(){
             document.getElementById('login-form').style.display = 'block';
             
             const salvo = localStorage.getItem('aluno_lms_sessao');
-            if(salvo){ ALUNO = JSON.parse(salvo); abrirMural(); }
+            if(salvo){ ALUNO = JSON.parse(salvo); window.abrirMural(); }
         } else {
             document.getElementById('msg-erro-conexao').innerHTML = 'O professor ainda não publicou as turmas.';
         }
     } catch(e) {
-        document.getElementById('msg-erro-conexao').innerHTML = '<span style="color:red">Falha ao buscar dados: ' + e.message + '</span>';
+        document.getElementById('msg-erro-conexao').innerHTML = '<span style="color:red">Falha ao buscar dados com a nuvem.</span>';
     }
-}
+};
 
 window.carregarAlunos = function(){
     const tid = document.getElementById('sel-turma').value;
@@ -98,8 +262,8 @@ window.mostrarPin = async function() {
     btn.style.display = 'none';
     
     try {
-        const snap = await getDoc(doc(_db, 'lms_senhas', aid));
-        isCadastroPin = !snap.exists(); 
+        const snap = await _db.collection('lms_senhas').doc(aid).get();
+        isCadastroPin = !snap.exists; 
         
         if(isCadastroPin){
             document.getElementById('lbl-pin').textContent = '3. CRIE UMA SENHA (PIN DE 4 NÚMEROS)';
@@ -131,7 +295,7 @@ window.entrarMural = async function(){
 
     if(isCadastroPin) {
         try {
-            await setDoc(doc(_db, 'lms_senhas', aid), { pin: pinDigitado });
+            await _db.collection('lms_senhas').doc(aid).set({ pin: pinDigitado });
             ALUNO.realPin = pinDigitado;
         } catch(e) {
             document.getElementById('btn-login-aluno').disabled = false;
@@ -153,7 +317,7 @@ window.entrarMural = async function(){
     
     localStorage.setItem('aluno_lms_sessao', JSON.stringify(ALUNO));
     document.getElementById('btn-login-aluno').disabled = false;
-    abrirMural();
+    window.abrirMural();
 };
 
 window.alterarMinhaSenha = async function() {
@@ -165,7 +329,7 @@ window.alterarMinhaSenha = async function() {
     if(!nova || nova.length < 4) return alert('A nova senha deve ter 4 números.');
     
     try {
-        await setDoc(doc(_db, 'lms_senhas', ALUNO.id), { pin: nova });
+        await _db.collection('lms_senhas').doc(ALUNO.id).set({ pin: nova });
         ALUNO.realPin = nova;
         localStorage.setItem('aluno_lms_sessao', JSON.stringify(ALUNO));
         alert('Senha alterada com sucesso!');
@@ -179,13 +343,13 @@ window.sair = function(){
     document.getElementById('aluno-pin').value = '';
     document.getElementById('box-pin').style.display = 'none';
     document.getElementById('btn-login-aluno').style.display = 'none';
-    mostrarTela('tela-login');
+    window.mostrarTela('tela-login');
 };
 
-async function abrirMural(){
+window.abrirMural = async function(){
     document.getElementById('mural-nome').textContent = ALUNO.nome.split(' ')[0];
     document.getElementById('mural-turma').textContent = ALUNO.turmaNome;
-    mostrarTela('tela-mural');
+    window.mostrarTela('tela-mural');
     
     document.getElementById('mural-loading').style.display = 'block';
     document.getElementById('mural-conteudo').style.display = 'none';
@@ -207,10 +371,11 @@ async function abrirMural(){
     } else document.getElementById('sec-materiais').style.display = 'none';
 
     try {
-        const snapMeta = await getDoc(doc(_db, 'publico', 'atividades_meta'));
+        // Renderiza Notas e Vistos (do Professor)
+        const snapMeta = await _db.collection('publico').doc('atividades_meta').get();
         let htmlBoletim = '';
-        if(snapMeta.exists() && snapMeta.data().meta) {
-            metadadosAtividades = JSON.parse(snapMeta.data().meta);
+        if(snapMeta.exists && snapMeta.data().meta) {
+            const metadadosAtividades = JSON.parse(snapMeta.data().meta);
             const profTurmaAtiv = metadadosAtividades[ALUNO.turmaId] || [];
             
             profTurmaAtiv.forEach(av => {
@@ -222,8 +387,8 @@ async function abrirMural(){
             });
         }
         
-        const qRes = query(collection(_db, 'quiz_resultados'), where('alunoId', '==', ALUNO.id));
-        const snapRes = await getDocs(qRes);
+        // Renderiza Resultados de Provas Online Anteriores
+        const snapRes = await _db.collection('quiz_resultados').where('alunoId', '==', ALUNO.id).get();
         snapRes.forEach(doc => {
             const r = doc.data();
             htmlBoletim += `<div class="boletim-row"><span>🚀 ${r.tituloProva}</span> <span><span style="color:${r.placar >= 70 ? 'green' : 'red'};font-weight:bold">${r.placar}%</span></span></div>`;
@@ -236,9 +401,10 @@ async function abrirMural(){
             document.getElementById('sec-notas').style.display = 'none';
         }
 
-        const snapProvas = await getDoc(doc(_db, 'publico', 'provas'));
+        // Renderiza Provas para fazer
+        const snapProvas = await _db.collection('publico').doc('provas').get();
         provasPublicadas = [];
-        if(snapProvas.exists() && snapProvas.data().provas) provasPublicadas = JSON.parse(snapProvas.data().provas);
+        if(snapProvas.exists && snapProvas.data().provas) provasPublicadas = JSON.parse(snapProvas.data().provas);
         
         document.getElementById('mural-loading').style.display = 'none';
         document.getElementById('mural-conteudo').style.display = 'block';
@@ -252,8 +418,8 @@ async function abrirMural(){
         provasPublicadas.sort((a,b)=>b.criadoEm.localeCompare(a.criadoEm));
         listaProvas.innerHTML = provasPublicadas.map(p => `<div class="prova-card" onclick="window.iniciarProva('${p.id}')"><div style="display:flex;align-items:center;flex:1"><div class="prova-icon">📝</div><div><strong style="font-size:15px;color:var(--verde);display:block;margin-bottom:2px">${p.titulo}</strong><span style="font-size:12px;color:var(--muted)">${p.perguntas.length} Questões</span></div></div><div style="font-weight:800;color:var(--verde2);font-size:16px">→</div></div>`).join('');
         
-    } catch(e) { document.getElementById('mural-loading').innerHTML = '<span style="color:red">Erro ao carregar as provas e notas.</span>'; }
-}
+    } catch(e) { document.getElementById('mural-loading').innerHTML = '<span style="color:red">Erro ao carregar as atividades.</span>'; }
+};
 
 window.toggleChecklist = function(idCheck, elemento){
     const key = 'aluno_checks_' + ALUNO.id;
@@ -283,7 +449,7 @@ window.iniciarProva = function(id){
             html += `<textarea id="resp_${i}" placeholder="Escreva a sua resposta..."></textarea>`;
             html += `<div style="margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap">
                         <label style="background:var(--light); border:1px solid var(--border); padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; color:var(--text); font-size:12px; display:flex; align-items:center; gap:5px; margin:0;">
-                            📷 Anexar Foto da Questão
+                            📷 Anexar Foto (Específica)
                             <input type="file" accept="image/*" capture="environment" style="display:none" onchange="window.comprimirImagem(this, ${i})">
                         </label>
                         <span id="feedback_foto_${i}" style="font-size:12px; font-weight:bold;"></span>
@@ -294,11 +460,11 @@ window.iniciarProva = function(id){
     
     document.getElementById('btn-enviar').disabled = false;
     document.getElementById('btn-enviar').innerHTML = 'Entregar Avaliação ✅';
-    mostrarTela('tela-prova'); window.scrollTo(0,0);
+    window.mostrarTela('tela-prova'); window.scrollTo(0,0);
 };
 
 window.voltarMural = function(){
-    if(confirm('Tem certeza? Suas respostas não salvas serão perdidas.')){ abrirMural(); }
+    if(confirm('Tem certeza? Suas respostas não salvas serão perdidas.')){ window.abrirMural(); }
 };
 
 window.comprimirImagem = function(input, qIdx) {
@@ -306,7 +472,7 @@ window.comprimirImagem = function(input, qIdx) {
     if(!file) return;
     
     const feedback = document.getElementById(`feedback_foto_${qIdx}`);
-    feedback.innerHTML = '<span style="color:var(--ouro)">Comprimindo foto... ⏳</span>';
+    feedback.innerHTML = '<span style="color:var(--ouro)">Processando foto... ⏳</span>';
     
     const reader = new FileReader();
     reader.onload = function(event) {
@@ -362,10 +528,10 @@ window.enviarProva = async function(){
     });
 
     if(anexosProva['global']) {
-        dissertativas.push({ enunciado: "📷 Foto Extra (Caderno/Rascunho)", respostaAluno: "Anexo livre do aluno.", anexo: anexosProva['global'] });
+        dissertativas.push({ enunciado: "📷 Foto Extra (Caderno/Rascunho)", respostaAluno: "Imagem anexada pelo aluno.", anexo: anexosProva['global'] });
     }
 
-    if(!todasRespondidas){ alert('Por favor, preencha o texto (ou escolha a opção) ou anexe uma foto em todas as questões antes de entregar.'); return; }
+    if(!todasRespondidas){ alert('Por favor, preencha o texto, selecione uma opção ou anexe uma foto em todas as questões antes de entregar.'); return; }
 
     const placar = totalME > 0 ? Math.round((acertosME / totalME) * 100) : 100;
     const payload = {
@@ -379,20 +545,15 @@ window.enviarProva = async function(){
     document.getElementById('btn-enviar').innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0;border-width:2px"></div> Enviando a sua prova...';
 
     try {
-        await addDoc(collection(_db, 'quiz_resultados'), payload);
-        mostrarTela('tela-sucesso'); window.scrollTo(0,0);
+        await _db.collection('quiz_resultados').add(payload);
+        window.mostrarTela('tela-sucesso'); window.scrollTo(0,0);
     } catch(e) {
-        alert('Erro de conexão ao enviar a prova. Verifique a internet.');
+        alert('Erro de conexão ao enviar a prova. Verifique sua internet.');
         document.getElementById('btn-enviar').disabled = false; document.getElementById('btn-enviar').innerHTML = 'Entregar Avaliação ✅';
     }
 };
 
-function mostrarTela(id){ document.querySelectorAll('.container').forEach(c => c.classList.remove('act')); document.getElementById(id).classList.add('act'); }
+window.mostrarTela = function(id){ document.querySelectorAll('.container').forEach(c => c.classList.remove('act')); document.getElementById(id).classList.add('act'); };
 </script>
-
-<style>
-.boletim-row { display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee; font-size:14px; align-items:center;}
-.boletim-row:last-child { border-bottom: none; }
-</style>
 </body>
 </html>
